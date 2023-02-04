@@ -1,39 +1,31 @@
 import httpx
 from httpx import Client, HTTPTransport
-from loguru import logger
+
+from lxd_python.models import LXDException, SyncResponse
 
 
 class LXD:
     def __init__(self) -> None:
         transport: HTTPTransport = httpx.HTTPTransport(uds="/var/lib/lxd/unix.socket")
-        self.client: Client = Client(
-            transport=transport,
-            event_hooks={
-                "request": [self.log_request],
-                "response": [self.log_response],
-            },
-        )
+        self.client: Client = Client(transport=transport)
 
     def close(self) -> None:
         """Close the client."""
         self.client.close()
 
-    def log_request(self, request) -> None:
-        """Log the request."""
-        logger.debug(f"Request: {request.method} {request.url}")
+    def get(self, path: str) -> SyncResponse:
+        """Get a resource.
 
-    def log_response(self, response) -> None:
-        """Log the response."""
-        logger.debug(f"Response: {response.status_code} {response.url}")
+        Args:
+            path (str): The path to the resource.
 
-    def get(self, path: str) -> dict[str, str]:
-        """Get a resource."""
-        return self.client.get(f"http://localhost{path}").json()
+        Returns:
+            SyncResponse: The response from the LXD server.
 
-    def get_api_endpoints(self) -> dict[str, str]:
-        """Get API endpoints."""
-        return self.get("/")
-
-    def get_certificates(self) -> dict[str, str]:
-        """Get certificates."""
-        return self.get("/1.0/certificates")
+        Raises:
+            LXDException: If the response contains an error.
+        """
+        response = self.client.get(f"http://localhost{path}").json()
+        if response.get("type", "").lower == "error":
+            raise LXDException(response)
+        return SyncResponse(response)
