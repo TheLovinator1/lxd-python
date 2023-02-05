@@ -28,29 +28,6 @@ class SyncResponse:
 
 
 @dataclass
-class LXDException(Exception):
-    path: str
-    error: str
-    status_code: int
-    response_type: str
-
-    def __init__(self, response: Dict[str, Any], path: str = "") -> None:
-        self.path = path
-        self.error = response.get("error", "Unknown error")
-        self.status_code = response.get("status_code", 0)
-        self.response_type = response.get("type", "")
-        self.error_code = self.args[0]["error_code"]
-
-    def __str__(self) -> str:
-        # LXDException: Not authorized (path: /1.0/cluster, error code: 404)
-        return f"LXDException: {self.error_code} - {self.error.capitalize()} (path: {self.path})"
-
-    def __repr__(self) -> str:
-        # LXDException(path='/1.0/cluster', error='Not authorized', status_code=403, response_type='error')
-        return f"LXDException(path='{self.path}', error='{self.error.capitalize()}', status_code='{self.status_code}', response_type='{self.response_type}', error_code='{self.error_code}')"  # noqa: E501
-
-
-@dataclass
 class Server:
     """Server represents a LXD server"""
 

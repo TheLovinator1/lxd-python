@@ -3,7 +3,8 @@ from typing import Any, Dict, Optional
 import httpx
 from httpx import Client, HTTPTransport
 
-from lxd_python.models import LXDException, SyncResponse
+from lxd_python.exceptions import LXDException, LXDForbidden, LXDInternalServerError
+from lxd_python.models import SyncResponse
 
 
 class LXD:
@@ -29,8 +30,13 @@ class LXD:
             LXDException: If the response contains an error.
         """
         response = self.client.get(f"http://localhost{path}", params=params).json()
-        if response["type"] == "error":
-            raise LXDException(response, path=path)
+
+        if response.error_code == 403:
+            raise LXDForbidden(response=response, path=path)
+        elif response.error_code == 500:
+            raise LXDInternalServerError(response=response, path=path)
+        elif response.error_code != 200:
+            raise LXDException(response=response, path=path)
 
         return SyncResponse(response)
 
@@ -49,6 +55,6 @@ class LXD:
         """
         response = self.client.post(f"http://localhost{path}", json=data).json()
         if response["type"] == "error":
-            raise LXDException(response, path=path)
+            raise LXDForbidden(response, path=path)
 
         return SyncResponse(response)
