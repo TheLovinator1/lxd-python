@@ -1,3 +1,5 @@
+from typing import Any, Dict, Optional
+
 import httpx
 from httpx import Client, HTTPTransport
 
@@ -13,11 +15,12 @@ class LXD:
         """Close the client."""
         self.client.close()
 
-    def get(self, path: str) -> SyncResponse:
+    def get(self, path: str, params: Optional[Dict[str, Any]] = None) -> SyncResponse:
         """Get a resource.
 
         Args:
-            path (str): The path to the resource.
+            path: The path to the resource.
+            params: The query parameters. Defaults to None.
 
         Returns:
             SyncResponse: The response from the LXD server.
@@ -25,7 +28,8 @@ class LXD:
         Raises:
             LXDException: If the response contains an error.
         """
-        response = self.client.get(f"http://localhost{path}").json()
-        if response.get("type", "").lower == "error":
-            raise LXDException(response)
+        response = self.client.get(f"http://localhost{path}", params=params).json()
+        if response["type"] == "error":
+            raise LXDException(response, path=path)
+
         return SyncResponse(response)
