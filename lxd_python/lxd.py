@@ -33,3 +33,22 @@ class LXD:
             raise LXDException(response, path=path)
 
         return SyncResponse(response)
+
+    def post(self, path: str, data: Optional[Dict[str, Any]] = None) -> SyncResponse:
+        """Post a resource.
+
+        Args:
+            path: The path to the resource.
+            data: The data to post. Defaults to None.
+
+        Returns:
+            SyncResponse: The response from the LXD server.
+
+        Raises:
+            LXDException: If the response contains an error.
+        """
+        response = self.client.post(f"http://localhost{path}", json=data).json()
+        if response["type"] == "error":
+            raise LXDException(response, path=path)
+
+        return SyncResponse(response)

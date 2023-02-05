@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List
 
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+
 
 @dataclass
 class SyncResponse:
@@ -152,3 +156,63 @@ class Cluster:
         self.enabled = metadata["enabled"]
         self.member_config = [MemberConfig(m) for m in metadata["member_config"]]
         self.server_name = metadata["server_name"]
+
+
+@dataclass()
+class CertificatesPost:
+
+    # The certificate itself, as PEM encoded X509
+    # example: X509 PEM certificate
+    certificate: str
+
+    # Name associated with the certificate
+    # example: castiana
+    name: str
+
+    # Server trust password (used to add an untrusted client)
+    # example: blah
+    password: str
+
+    # List of allowed projects (applies when restricted)
+    # example: List["default", "foo", "bar"]
+    projects: List[str] | None
+
+    # Whether to limit the certificate to listed projects
+    # example: true
+    restricted: bool
+
+    # Whether to create a certificate add token
+    # example: true
+    token: bool
+
+    # Usage type for the certificate
+    # example: client
+    cert_type: str
+
+    def __init__(self, certificate, name, password, token, cert_type, restricted=False, projects=None) -> None:
+        # TODO: Raise exception if certificate is not a valid certificate
+        cert = x509.load_pem_x509_certificate(certificate.encode(), default_backend())
+        base64: str = cert.public_bytes(serialization.Encoding.PEM).decode()
+
+        # Remove the first and last line and join the lines together again
+        base64_split: list[str] = base64.splitlines()[1:-1]
+        base64 = "".join(base64_split)
+
+        self.certificate = base64
+        self.name = name
+        self.password = password
+        self.projects = projects
+        self.restricted = restricted
+        self.token = token
+        self.cert_type = cert_type
+
+    def dict(self) -> Dict[str, Any]:
+        return {
+            "certificate": self.certificate,
+            "name": self.name,
+            "password": self.password,
+            "projects": self.projects,
+            "restricted": self.restricted,
+            "token": self.token,
+            "type": self.cert_type,
+        }
