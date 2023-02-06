@@ -5,7 +5,14 @@ from lxd_python.models import CertificatesPost, SyncResponse
 
 
 def get_certificates(lxd: LXD) -> List[str]:
-    """Get certificates."""
+    """Get certificates.
+
+    Args:
+        lxd: The LXD client.
+
+    Returns:
+        List[str]: List of certificates.
+    """
     certificates: SyncResponse = lxd.get("/1.0/certificates")
 
     return certificates.metadata
@@ -18,6 +25,7 @@ def add_certificate(lxd: LXD, certificate: CertificatesPost) -> SyncResponse:
     In this mode, the password property is always ignored.
 
     Args:
+        lxd: The LXD client.
         certificate (CertificatesPost): Certificate to add.
 
     Returns:

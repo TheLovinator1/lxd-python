@@ -23,15 +23,33 @@ class LXDBaseException(Exception):
 
 
 class LXDException(LXDBaseException):
+    """LXDException is raised when the LXD server returns when the error is not LXDForbidden or LXDInternalServerError.
+
+    Args:
+        LXDBaseException: The base exception class.
+    """
+
     def __str__(self) -> str:
-        return f"LXDException: {self.error_code} - {self.error.capitalize()} (path: {self.path})"
+        return f"LXDException: {self.error_code} - {self.error.capitalize()} (path: {self.path or 'Unknown'})"
 
 
 class LXDForbidden(LXDBaseException):
+    """LXDForbidden is raised when the LXD server returns a 403 Forbidden error.
+
+    Args:
+        LXDBaseException: The base exception class.
+    """
+
     def __str__(self) -> str:
-        return f"LXDForbidden: You are not authorized to access this resource (path: {self.path})"
+        return f"LXDForbidden: You are not authorized to access this resource (path: {self.path or 'Unknown'})"
 
 
 class LXDInternalServerError(LXDBaseException):
+    """LXDInternalServerError is raised when the LXD server returns a 500 Internal Server Error.
+
+    Args:
+        LXDBaseException: The base exception class.
+    """
+
     def __str__(self) -> str:
-        return f"LXDInternalServerError: Internal server error (path: {self.path})"
+        return f"LXDInternalServerError: Internal server error (path: {self.path or 'Unknown'})"

@@ -29,7 +29,7 @@ class SyncResponse:
 
 @dataclass
 class Server:
-    """Server represents a LXD server"""
+    """Server represents a LXD server."""
 
     # List of supported API extensions.
     # Example: List["etag", "patch", "network", "storage"]
@@ -137,6 +137,7 @@ class Cluster:
 
 @dataclass()
 class CertificatesPost:
+    """CertificatesPost represents the fields of a new LXD certificate"""
 
     # The certificate itself, as PEM encoded X509
     # example: X509 PEM certificate
