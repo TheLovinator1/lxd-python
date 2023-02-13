@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Any, Dict, Optional
 
 import httpx
@@ -7,9 +8,26 @@ from lxd_python.exceptions import LXDBadRequest, LXDException, LXDForbidden, LXD
 from lxd_python.models import SyncResponse
 
 
+@lru_cache(maxsize=1)
+def get_socket_location() -> str:
+    """Get the location of the LXD socket.
+
+    Snap and non-snap installations of LXD use different socket locations.
+
+    Returns:
+        str: The location of the LXD socket.
+    """
+
+    try:
+        with open("/var/snap/lxd/common/lxd/unix.socket", "r"):
+            return "/var/snap/lxd/common/lxd/unix.socket"
+    except FileNotFoundError:
+        return "/var/lib/lxd/unix.socket"
+
+
 class LXD:
     def __init__(self) -> None:
-        transport: HTTPTransport = httpx.HTTPTransport(uds="/var/lib/lxd/unix.socket")
+        transport: HTTPTransport = httpx.HTTPTransport(uds=get_socket_location())
         self.client: Client = Client(transport=transport)
 
     def close(self) -> None:
