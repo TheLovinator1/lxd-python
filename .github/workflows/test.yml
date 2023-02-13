@@ -11,26 +11,13 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Install LXD
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y snapd
-          sudo snap install lxd
-          sudo snap list
-          sudo lxd init --auto
-          sudo lxc info
-          sudo systemctl enable --now snap.lxd.daemon.unix.socket
-          sudo systemctl status snap.lxd.daemon.unix.socket
-          sudo chmod 666 /var/snap/lxd/common/lxd/unix.socket
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Install Python 3.10
-        uses: actions/setup-python@v4
+      - uses: canonical/setup-lxd@main
+      - run: curl --unix-socket /var/snap/lxd/common/lxd/unix.socket http://localhost/1.0
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v4
         with:
           python-version: "3.10"
-      - name: Install Poetry
-        run: pipx install poetry
-      - name: Install dependencies
-        run: poetry install
-      - name: Run Pytest
-        run: poetry run pytest -vvvvvv --exitfirst --random-order --random-order-bucket=global
+          cache: "poetry"
+      - run: poetry install
+      - run: poetry run pytest -vvvvvv --exitfirst --random-order --random-order-bucket=global
