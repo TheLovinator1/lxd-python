@@ -1,13 +1,13 @@
 from typing import List
 
-from lxd_python.certificates import add_certificate, delete_certificate, get_certificates
+from lxd_python.certificates import add_certificate, delete_certificate, get_certificate, get_certificates
 from lxd_python.lxd import LXD
-from lxd_python.models import CertificatesPost, SyncResponse
+from lxd_python.models import Certificate, CertificatesPost, SyncResponse
 
 lxd: LXD = LXD()
 
 
-def test_get_certificates() -> None:
+def test_get_all_certificates() -> None:
     # Delete all certificates from the LXD server before testing.
     certificates: List[str] = get_certificates(lxd)
     for certificate in certificates:
@@ -37,6 +37,34 @@ def test_get_certificates() -> None:
     assert type(certificates) == list
     assert certificates != []
     assert type(certificates[0]) == str
+
+
+def test_get_certificate():
+    # Delete all certificates from the LXD server before testing.
+    certificates: List[str] = get_certificates(lxd)
+    for certificate in certificates:
+        delete_certificate(lxd=lxd, fingerprint=certificate)
+
+    # Add a certificate to the LXD server.
+    with open("tests/cert.pem", "r") as cert_from_file:
+        new_cert: CertificatesPost = CertificatesPost(
+            certificate=str(cert_from_file.read()),
+            name="test",
+            projects=["default"],
+            restricted=False,
+            token=False,
+            cert_type="client",
+            password="",
+        )
+        result: SyncResponse = add_certificate(lxd, new_cert)
+        assert result.status_code == 200
+
+    # Check that get_certificate() returns a certificate.
+    certificates: List[str] = get_certificates(lxd)
+    certificate: str = certificates[0]
+
+    our_certificate: Certificate = get_certificate(lxd, certificate)
+    assert type(our_certificate) == Certificate
 
 
 def test_add_certificate() -> None:

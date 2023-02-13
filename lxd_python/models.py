@@ -213,3 +213,24 @@ class CertificatesPost:
             "token": self.token,
             "type": self.cert_type,
         }
+
+
+@dataclass()
+class Certificate:
+    """A LXD certificate"""
+
+    certificate: str
+    fingerprint: str
+    name: str
+    projects: List[str]
+    restricted: bool
+    cert_type: str
+
+    def __init__(self, metadata: SyncResponse) -> None:
+        meta = metadata["metadata"]
+        self.certificate = meta["certificate"]
+        self.fingerprint = meta["fingerprint"]
+        self.name = meta["name"]
+        self.projects = list(meta["projects"])
+        self.restricted = meta["restricted"]
+        self.cert_type = meta["type"]

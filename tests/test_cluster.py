@@ -5,7 +5,7 @@ from lxd_python.models import Cluster, MemberConfig
 lxd: LXD = LXD()
 
 
-def test_get_cluster() -> None:
+def test_get_cluster() -> None:  # sourcery skip: extract-method
     """cluster: Cluster = get_cluster(lxd)"""
     cluster: Cluster = get_cluster(lxd)
     assert type(cluster) == Cluster
