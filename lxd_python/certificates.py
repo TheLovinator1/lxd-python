@@ -30,4 +30,24 @@ def add_certificate(lxd: LXD, certificate: CertificatesPost) -> SyncResponse:
 
     Returns:
         SyncResponse: Response from LXD."""
-    return lxd.post("/1.0/certificates", data=certificate.dict())
+    # Check if the certificate is already in the trust store.
+    response: SyncResponse = lxd.post("/1.0/certificates", data=certificate.dict())
+    return response
+
+
+def delete_certificate(lxd: LXD, fingerprint: str) -> SyncResponse:
+    """Delete the trusted certificate.
+
+    Removes a certificate from the trust store.
+
+    You can get the fingerprint of a certificate by running get_certificates().
+
+    Args:
+        lxd: The LXD client.
+        fingerprint (str): Fingerprint of certificate to delete.
+
+    Returns:
+        SyncResponse: Response from LXD.
+    """
+    response: SyncResponse = lxd.delete(f"{fingerprint}")
+    return response

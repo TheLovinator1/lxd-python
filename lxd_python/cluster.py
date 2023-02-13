@@ -12,4 +12,4 @@ def get_cluster(lxd: LXD) -> Cluster:
         Cluster: The cluster configuration.
     """
     cluster: SyncResponse = lxd.get("/1.0/cluster")
-    return Cluster(cluster.metadata)
+    return Cluster(cluster)

@@ -16,15 +16,23 @@ class SyncResponse:
     error: str
     metadata: List[str]
 
-    def __init__(self, response: Any) -> None:
-        response = dict(response)
-        self.response_type = response.get("type", "")
-        self.status = response.get("status", "")
-        self.status_code = response.get("status_code", 0)
-        self.operation = response.get("operation", "")
-        self.error_code = response.get("error_code", 0)
-        self.error = response.get("error", "")
-        self.metadata = response.get("metadata", [])
+    def __init__(self, response: Dict[str, Any]) -> None:
+        self.response_type = response["type"]
+        self.status = response["status"]
+        self.status_code = response["status_code"]
+        self.operation = response["operation"]
+        self.error_code = response["error_code"]
+        self.error = response["error"]
+        self.metadata = response["metadata"]
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(response_type='{self.response_type}', status='{self.status}', status_code='{self.status_code}', operation='{self.operation}', error_code='{self.error_code}', error='{self.error}', metadata='{self.metadata}')"  # noqa: E501
+
+    def __getitem__(self, key: str) -> Any:
+        return getattr(self, key)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return getattr(self, key, default)
 
 
 @dataclass
@@ -67,7 +75,7 @@ class Server:
     # Example: false
     public: bool
 
-    def __init__(self, environment):
+    def __init__(self, environment: SyncResponse):
         self.api_extensions = environment.get("api_extensions", [])
         self.api_status = environment.get("api_status", "")
         self.api_version = environment.get("api_version", "")
@@ -106,7 +114,7 @@ class MemberConfig:
     # Example: /dev/sdb
     value: str
 
-    def __init__(self, metadata) -> None:
+    def __init__(self, metadata: SyncResponse) -> None:
         self.description = metadata["description"]
         self.entity = metadata["entity"]
         self.key = metadata["key"]
@@ -129,10 +137,11 @@ class Cluster:
     # Example: lxd01
     server_name: str
 
-    def __init__(self, metadata) -> None:
-        self.enabled = metadata["enabled"]
-        self.member_config = [MemberConfig(m) for m in metadata["member_config"]]
-        self.server_name = metadata["server_name"]
+    def __init__(self, metadata: SyncResponse) -> None:
+        meta = metadata["metadata"]
+        self.enabled = meta["enabled"]
+        self.member_config = [MemberConfig(m) for m in meta["member_config"]]
+        self.server_name = meta["server_name"]
 
 
 @dataclass()
@@ -167,7 +176,17 @@ class CertificatesPost:
     # example: client
     cert_type: str
 
-    def __init__(self, certificate, name, password, token, cert_type, restricted=False, projects=None) -> None:
+    def __init__(
+        self,
+        certificate: str,
+        name: str,
+        password: str,
+        token: bool,
+        cert_type: str,
+        restricted: bool = False,
+        projects: List[str] | None = None,
+    ) -> None:
+
         # TODO: Raise exception if certificate is not a valid certificate
         cert = x509.load_pem_x509_certificate(certificate.encode(), default_backend())
         base64: str = cert.public_bytes(serialization.Encoding.PEM).decode()
