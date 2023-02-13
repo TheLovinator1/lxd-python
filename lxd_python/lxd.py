@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from typing import Any, Dict, Optional
 
@@ -18,11 +19,9 @@ def get_socket_location() -> str:
         str: The location of the LXD socket.
     """
 
-    try:
-        with open("/var/snap/lxd/common/lxd/unix.socket", "r"):
-            return "/var/snap/lxd/common/lxd/unix.socket"
-    except FileNotFoundError:
-        return "/var/lib/lxd/unix.socket"
+    if os.path.exists("/var/snap/lxd/common/lxd/unix.socket"):
+        return "/var/snap/lxd/common/lxd/unix.socket"
+    return "/var/lib/lxd/unix.socket"
 
 
 class LXD:
