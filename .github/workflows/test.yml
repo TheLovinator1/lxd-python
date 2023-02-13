@@ -11,7 +11,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: canonical/setup-lxd@main
+      - run: sudo snap install lxd
+      - run: sudo lxd init --auto
       - run: sudo systemctl enable --now snap.lxd.daemon.unix.socket
       - run: sudo chmod 666 /var/snap/lxd/common/lxd/unix.socket
       - uses: actions/checkout@v3
