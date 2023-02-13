@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: canonical/setup-lxd@main
+      - run: sudo systemctl enable --now snap.lxd.daemon.unix.socket
       - run: sudo chmod 666 /var/snap/lxd/common/lxd/unix.socket
       - uses: actions/checkout@v3
       - run: pipx install poetry
