@@ -29,8 +29,10 @@ def test_get_all_certificates() -> None:
             cert_type="client",
             password="",
         )
-        result: SyncResponse = add_certificate(lxd, new_cert)
-        assert result.status_code == 200
+        result: SyncResponse | None = add_certificate(lxd, new_cert)
+        if result is None:
+            assert False
+        assert result["status_code"] == 200
 
     # Check that get_certificates() returns a list with one certificate.
     certificates: List[str] = get_certificates(lxd)
@@ -39,7 +41,7 @@ def test_get_all_certificates() -> None:
     assert type(certificates[0]) == str
 
 
-def test_get_certificate():
+def test_get_certificate() -> None:
     # Delete all certificates from the LXD server before testing.
     certificates: List[str] = get_certificates(lxd)
     for certificate in certificates:
@@ -56,8 +58,10 @@ def test_get_certificate():
             cert_type="client",
             password="",
         )
-        result: SyncResponse = add_certificate(lxd, new_cert)
-        assert result.status_code == 200
+        result: SyncResponse | None = add_certificate(lxd, new_cert)
+        if result is None:
+            assert False
+        assert result["status_code"] == 200
 
     # Check that get_certificate() returns a certificate.
     certificates: List[str] = get_certificates(lxd)
@@ -67,7 +71,7 @@ def test_get_certificate():
     assert type(our_certificate) == Certificate
 
 
-def test_add_certificate() -> None:
+def test_add_certificate() -> None:  # sourcery skip: extract-duplicate-method
     # Remove all certificates from the LXD server.
     certificates: List[str] = get_certificates(lxd)
     for certificate in certificates:
@@ -83,8 +87,10 @@ def test_add_certificate() -> None:
             cert_type="client",
             password="",
         )
-        result: SyncResponse = add_certificate(lxd, new_cert)
-        assert result.status_code == 200
+        result: SyncResponse | None = add_certificate(lxd, new_cert)
+        if result is None:
+            assert False
+        assert result["status_code"] == 200
 
     # Check that the certificate was added.
     certificates: List[str] = get_certificates(lxd)

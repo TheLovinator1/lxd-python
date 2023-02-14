@@ -30,7 +30,6 @@ def get_certificate(lxd: LXD, fingerprint: str) -> Certificate:
     # Remove /1.0/certificates/ from the fingerprint if it was provided.
     clean_fingerprint: str = fingerprint.replace("/1.0/certificates/", "")
     certificate: SyncResponse = lxd.get(f"/1.0/certificates/{clean_fingerprint}")
-
     return Certificate(certificate)
 
 
@@ -43,12 +42,15 @@ def add_certificate(lxd: LXD, certificate: CertificatesPost) -> SyncResponse:
     Args:
         lxd: The LXD client.
         certificate (CertificatesPost): Certificate to add.
+        exist_ok (bool): If True, do not raise an exception if the certificate already exists.
+
+    Raises:
+        ValueError: If the certificate already exists and exist_ok is False.
 
     Returns:
-        SyncResponse: Response from LXD."""
-    # Check if the certificate is already in the trust store.
-    response: SyncResponse = lxd.post("/1.0/certificates", data=certificate.dict())
-    return response
+        SyncResponse: Response from LXD.
+    """
+    return lxd.post("/1.0/certificates", data=certificate.dict())
 
 
 def delete_certificate(lxd: LXD, fingerprint: str) -> SyncResponse:
@@ -65,5 +67,4 @@ def delete_certificate(lxd: LXD, fingerprint: str) -> SyncResponse:
     Returns:
         SyncResponse: Response from LXD.
     """
-    response: SyncResponse = lxd.delete(f"{fingerprint}")
-    return response
+    return lxd.delete(f"{fingerprint}")

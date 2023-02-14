@@ -1,11 +1,12 @@
 import os
+import sys
 from functools import lru_cache
 from typing import Any, Dict, Optional
 
 import httpx
 from httpx import Client, HTTPTransport
+from loguru import logger
 
-from lxd_python.exceptions import LXDBadRequest, LXDException, LXDForbidden, LXDInternalServerError
 from lxd_python.models import SyncResponse
 
 
@@ -20,76 +21,99 @@ def get_socket_location() -> str:
     """
 
     if os.path.exists("/var/snap/lxd/common/lxd/unix.socket"):
+        logger.info("Snap installation of LXD detected. Using /var/snap/lxd/common/lxd/unix.socket.")
         return "/var/snap/lxd/common/lxd/unix.socket"
+
+    logger.info("Non-snap installation of LXD detected. Using /var/lib/lxd/unix.socket.")
     return "/var/lib/lxd/unix.socket"
 
 
 class LXD:
     def __init__(self) -> None:
+        # TODO: Add a way to configure logging.
+        log_format: str = (
+            "<green>{time:YYYY-MM-DD at HH:mm:ss}</green>"
+            " <level>{level: <5}</level>"
+            " <magenta>{extra[method]}</magenta>"
+            " <cyan>{extra[path]}</cyan>"
+            " <white>{message}</white>"
+            " <dim>{extra[response]}</dim>"
+        )
+        logger.configure(extra={"method": "", "path": "", "response": ""})
+        logger.remove()
+        logger.add(
+            sys.stderr,
+            format=log_format,
+            level="DEBUG",
+            colorize=True,
+            backtrace=False,
+            diagnose=False,
+            catch=True,
+        )
+
         transport: HTTPTransport = httpx.HTTPTransport(uds=get_socket_location())
         self.client: Client = Client(transport=transport)
 
+    @logger.catch
     def close(self) -> None:
         """Close the client."""
+        logger.info("Closing client.")
         self.client.close()
 
+    @logger.catch
     def get(self, path: str, params: Optional[Dict[str, Any]] = None) -> SyncResponse:
         """Get a resource.
 
         Args:
-            path: The path to the resource.
+            path: The path to the resource. For example, /1.0/containers.
             params: The query parameters. Defaults to None.
 
         Returns:
             SyncResponse: The response from the LXD server.
-
-        Raises:
-            LXDBadRequest: If the response contains a 400 Bad Request error.
-            LXDForbidden: If the response contains a 403 Forbidden error.
-            LXDInternalServerError: If the response contains a 500 Internal Server Error error.
-            LXDException: If the response contains an error and is not a 400 Bad Request, 403 Forbidden,
-            or 500 Internal Server Error error.
         """
         response = self.client.get(f"http://localhost{path}", params=params).json()
-        if response["error_code"] == 400:
-            raise LXDBadRequest(response=response, path=path)
-        elif response["error_code"] == 403:
-            raise LXDForbidden(response=response, path=path)
-        elif response["error_code"] == 500:
-            raise LXDInternalServerError(response=response, path=path)
-        elif response["error_code"] != 0:
-            raise LXDException(response=response, path=path)
-        return SyncResponse(response)
+        logger.debug("", method="GET", path=path, response=response)
+        status_code: int = response["status_code"]
+        match status_code:
+            case 200:
+                return SyncResponse(response)
+            case 400:
+                raise ValueError("Bad request.")
+            case 403:
+                raise ValueError("Permission denied.")
+            case 500:
+                raise ValueError("Internal server error.")
+            case _:
+                raise ValueError(f"Unknown status code ({status_code}). You should contact TheLovinator :-)")
 
+    @logger.catch
     def post(self, path: str, data: Optional[Dict[str, Any]] = None) -> SyncResponse:
         """Post a resource.
 
         Args:
-            path: The path to the resource.
+            path: The path to the resource. For example, /1.0/containers.
             data: The data to post. Defaults to None.
 
         Returns:
             SyncResponse: The response from the LXD server.
-
-        Raises:
-            LXDBadRequest: If the response contains a 400 Bad Request error.
-            LXDForbidden: If the response contains a 403 Forbidden error.
-            LXDInternalServerError: If the response contains a 500 Internal Server Error error.
-            LXDException: If the response contains an error and is not a 400 Bad Request, 403 Forbidden,
-            or 500 Internal Server Error error.
         """
         response = self.client.post(f"http://localhost{path}", json=data).json()
+        logger.debug("", method="POST", path=path, response=response)
 
-        if response["error_code"] == 400:
-            raise LXDBadRequest(response=response, path=path)
-        elif response["error_code"] == 403:
-            raise LXDForbidden(response=response, path=path)
-        elif response["error_code"] == 500:
-            raise LXDInternalServerError(response=response, path=path)
-        elif response["error_code"] != 0:
-            raise LXDException(response=response, path=path)
-        return SyncResponse(response)
+        status_code: int = response["status_code"]
+        match status_code:
+            case 200:
+                return response
+            case 400:
+                raise ValueError("Bad request.")
+            case 403:
+                raise ValueError("Permission denied.")
+            case 500:
+                raise ValueError("Internal server error.")
+            case _:
+                raise ValueError(f"Unknown status code ({status_code}). You should contact TheLovinator :-)")
 
+    @logger.catch
     def delete(self, path: str) -> SyncResponse:
         """Delete a resource.
 
@@ -98,22 +122,18 @@ class LXD:
 
         Returns:
             SyncResponse: The response from the LXD server.
-
-        Raises:
-            LXDBadRequest: If the response contains a 400 Bad Request error.
-            LXDForbidden: If the response contains a 403 Forbidden error.
-            LXDInternalServerError: If the response contains a 500 Internal Server Error error.
-            LXDException: If the response contains an error and is not a 400 Bad Request, 403 Forbidden,
-            or 500 Internal Server Error error.
-
         """
         response = self.client.delete(f"http://localhost{path}").json()
-        if response["error_code"] == 400:
-            raise LXDBadRequest(response=response, path=path)
-        elif response["error_code"] == 403:
-            raise LXDForbidden(response=response, path=path)
-        elif response["error_code"] == 500:
-            raise LXDInternalServerError(response=response, path=path)
-        elif response["error_code"] != 0:
-            raise LXDException(response=response, path=path)
-        return SyncResponse(response)
+        logger.debug("", method="DELETE", path=path, response=response)
+        status_code: int = response["status_code"]
+        match status_code:
+            case 200:
+                return SyncResponse(response)
+            case 400:
+                raise ValueError("Bad request.")
+            case 403:
+                raise ValueError("Permission denied.")
+            case 500:
+                raise ValueError("Internal server error.")
+            case _:
+                raise ValueError(f"Unknown status code ({status_code}). You should contact TheLovinator :-)")
