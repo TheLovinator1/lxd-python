@@ -17,7 +17,7 @@ def get_supported_api_endpoints(lxd: LXD) -> List[str]:
         List[str]: A list of supported API versions (URLs).
     """
     api_endpoints: SyncResponse = lxd.get("/")
-    return api_endpoints.metadata
+    return api_endpoints["metadata"]
 
 
 def get_server_environment_and_configuration(lxd: LXD, cluster_member_name: str, project_name: str) -> Server:

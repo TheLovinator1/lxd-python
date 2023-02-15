@@ -4,7 +4,7 @@ from functools import lru_cache
 from typing import Any, Dict, Optional
 
 import httpx
-from httpx import Client, HTTPTransport
+from httpx import Client, HTTPTransport, Response
 from loguru import logger
 
 from lxd_python.models import SyncResponse
@@ -21,10 +21,10 @@ def get_socket_location() -> str:
     """
 
     if os.path.exists("/var/snap/lxd/common/lxd/unix.socket"):
-        logger.info("Snap installation of LXD detected. Using /var/snap/lxd/common/lxd/unix.socket.")
+        logger.debug("Snap installation of LXD detected. Using /var/snap/lxd/common/lxd/unix.socket.")
         return "/var/snap/lxd/common/lxd/unix.socket"
 
-    logger.info("Non-snap installation of LXD detected. Using /var/lib/lxd/unix.socket.")
+    logger.debug("Non-snap installation of LXD detected. Using /var/lib/lxd/unix.socket.")
     return "/var/lib/lxd/unix.socket"
 
 
@@ -61,7 +61,7 @@ class LXD:
         self.client.close()
 
     @logger.catch
-    def get(self, path: str, params: Optional[Dict[str, Any]] = None) -> SyncResponse:
+    def get(self, path: str, params: Optional[Dict[str, Any]] = None):
         """Get a resource.
 
         Args:
@@ -71,20 +71,9 @@ class LXD:
         Returns:
             SyncResponse: The response from the LXD server.
         """
-        response = self.client.get(f"http://localhost{path}", params=params).json()
+        response: Response = self.client.get(f"http://localhost{path}", params=params)
         logger.debug("", method="GET", path=path, response=response)
-        status_code: int = response["status_code"]
-        match status_code:
-            case 200:
-                return SyncResponse(response)
-            case 400:
-                raise ValueError("Bad request.")
-            case 403:
-                raise ValueError("Permission denied.")
-            case 500:
-                raise ValueError("Internal server error.")
-            case _:
-                raise ValueError(f"Unknown status code ({status_code}). You should contact TheLovinator :-)")
+        return response.json()
 
     @logger.catch
     def post(self, path: str, data: Optional[Dict[str, Any]] = None) -> SyncResponse:
@@ -99,19 +88,7 @@ class LXD:
         """
         response = self.client.post(f"http://localhost{path}", json=data).json()
         logger.debug("", method="POST", path=path, response=response)
-
-        status_code: int = response["status_code"]
-        match status_code:
-            case 200:
-                return response
-            case 400:
-                raise ValueError("Bad request.")
-            case 403:
-                raise ValueError("Permission denied.")
-            case 500:
-                raise ValueError("Internal server error.")
-            case _:
-                raise ValueError(f"Unknown status code ({status_code}). You should contact TheLovinator :-)")
+        return response
 
     @logger.catch
     def delete(self, path: str) -> SyncResponse:
@@ -125,15 +102,34 @@ class LXD:
         """
         response = self.client.delete(f"http://localhost{path}").json()
         logger.debug("", method="DELETE", path=path, response=response)
-        status_code: int = response["status_code"]
-        match status_code:
-            case 200:
-                return SyncResponse(response)
-            case 400:
-                raise ValueError("Bad request.")
-            case 403:
-                raise ValueError("Permission denied.")
-            case 500:
-                raise ValueError("Internal server error.")
-            case _:
-                raise ValueError(f"Unknown status code ({status_code}). You should contact TheLovinator :-)")
+        return response
+
+    @logger.catch
+    def put(self, path: str, data: Optional[Dict[str, Any]] = None) -> SyncResponse:
+        """Put a resource.
+
+        Args:
+            path: The path to the resource.
+            data: The data to put. Defaults to None.
+
+        Returns:
+            SyncResponse: The response from the LXD server.
+        """
+        response = self.client.put(f"http://localhost{path}", json=data).json()
+        logger.debug("", method="PUT", path=path, response=response)
+        return response
+
+    @logger.catch
+    def patch(self, path: str, data: Optional[Dict[str, Any]] = None) -> SyncResponse:
+        """Patch a resource.
+
+        Args:
+            path: The path to the resource.
+            data: The data to patch. Defaults to None.
+
+        Returns:
+            SyncResponse: The response from the LXD server.
+        """
+        response = self.client.patch(f"http://localhost{path}", json=data).json()
+        logger.debug("", method="PATCH", path=path, response=response)
+        return response

@@ -65,7 +65,7 @@ class Server:
     # Server configuration map (refer https://github.com/lxc/lxd/blob/master/doc/server.md).
     # Example: Dict["core.https_address": "[::]:8443", "core.trust_password": true]
     # TODO: Should be ServerConfig instead of Dict[str, Any]
-    config = Dict[str, Any]
+    config: Dict[str, Any]
 
     # Environment represents the read-only environment fields of a LXD server.
     # TODO: Should be ServerEnvironment instead of Dict[str, Any]
@@ -226,7 +226,7 @@ class Certificate:
     restricted: bool
     cert_type: str
 
-    def __init__(self, metadata: SyncResponse) -> None:
+    def __init__(self, metadata) -> None:
         meta = metadata["metadata"]
         self.certificate = meta["certificate"]
         self.fingerprint = meta["fingerprint"]
